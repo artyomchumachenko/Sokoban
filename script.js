@@ -45,10 +45,26 @@ document.addEventListener('keydown', function (e) {
 function checkMove(direction) {
     // console.log(indexPlayerI + " " + indexPlayerJ);
     if (direction == 'u' && matrix[indexPlayerI - 1][indexPlayerJ] != "X") {
+        if (matrix[indexPlayerI - 1][indexPlayerJ] == "*") {
+            if (matrix[indexPlayerI - 1 - 1][indexPlayerJ] != "X" && matrix[indexPlayerI - 1 - 1][indexPlayerJ] != "*") {
+                this.case = new Container(indexPlayerI - 1, indexPlayerJ, indexPlayerI - 1 - 1, indexPlayerJ);
+                this.case.ReDraw();
+            } else {
+                return false;
+            }
+        }
         indexPlayerI--;
         return true;
     }
     if (direction == 'd' && matrix[indexPlayerI + 1][indexPlayerJ] != "X") {
+        if (matrix[indexPlayerI + 1][indexPlayerJ] == "*") {
+            if (matrix[indexPlayerI + 1 + 1][indexPlayerJ] != "X" && matrix[indexPlayerI + 1 + 1][indexPlayerJ] != "*") {
+                this.case = new Container(indexPlayerI + 1, indexPlayerJ, indexPlayerI + 1 + 1, indexPlayerJ);
+                this.case.ReDraw();
+            } else {
+                return false;
+            }
+        }
         indexPlayerI++;
         return true;
     }
@@ -147,26 +163,18 @@ class Container {
         this.nextJ = nextJ;
     }
 
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-    }
-
     ReDraw() {
         matrix[this.nextI][this.nextJ] = "*";
         matrix[this.i][this.j] = " ";
-        ctx.clearRect(this.j * 60, this.i * 60, cellSize, cellSize);
+        ctx.clearRect(this.j * 60 + 1, this.i * 60 + 1, cellSize - 2, cellSize - 2);
         ctx.beginPath();
         ctx.fillStyle = "blue";
-        ctx.fillRect((this.nextJ) * 60, this.nextI * 60, cellSize, cellSize);
+        ctx.fillRect(this.nextJ * 60 + 1, this.nextI * 60 + 1, cellSize - 2, cellSize - 2);
         ctx.closePath();
     }
 
-    init() {
-        ctx.beginPath();
-        ctx.fillStyle = "blue";
-        ctx.fillRect(this.x + 1, this.y + 1, cellSize - 2, cellSize - 2);
-        ctx.closePath();
+    Check() {
+
     }
 }
 
@@ -217,13 +225,15 @@ class Storage {
                 matrix[i].push(elem);
             } else if (elem == "*") {
                 matrix[i].push(elem);
-                this.case = new Container();
-                this.case.init();
+                ctx.beginPath();
+                ctx.fillStyle = "blue";
+                ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
+                ctx.closePath();
             } else if (elem == ".") {
                 matrix[i].push(elem);
                 ctx.beginPath();
                 ctx.fillStyle = "red";
-                ctx.fillRect(x, y, cellSize, cellSize);
+                ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
                 ctx.closePath();
             }
             x += cellSize;
