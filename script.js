@@ -43,30 +43,38 @@ document.addEventListener('keydown', function (e) {
 })
 
 function checkMove(direction) {
-    console.log(indexPlayerI + " " + indexPlayerJ);
-    if (direction == 'u') {
-        if (matrix[indexPlayerI - 1][indexPlayerJ] != "X") {
-            indexPlayerI--;
-            return true;
-        }
+    // console.log(indexPlayerI + " " + indexPlayerJ);
+    if (direction == 'u' && matrix[indexPlayerI - 1][indexPlayerJ] != "X") {
+        indexPlayerI--;
+        return true;
     }
-    if (direction == 'd') {
-        if (matrix[indexPlayerI + 1][indexPlayerJ] != "X") {
-            indexPlayerI++;
-            return true;
-        }
+    if (direction == 'd' && matrix[indexPlayerI + 1][indexPlayerJ] != "X") {
+        indexPlayerI++;
+        return true;
     }
-    if (direction == 'l') {
-        if (matrix[indexPlayerI][indexPlayerJ - 1] != "X") {
-            indexPlayerJ--;
-            return true;
+    if (direction == 'l' && matrix[indexPlayerI][indexPlayerJ - 1] != "X") {
+        if (matrix[indexPlayerI][indexPlayerJ - 1] == "*") {
+            if (matrix[indexPlayerI][indexPlayerJ - 1 - 1] != "X" && matrix[indexPlayerI][indexPlayerJ - 1 - 1] != "*") {
+                this.case = new Container(indexPlayerI, indexPlayerJ - 1, indexPlayerI, indexPlayerJ - 1 - 1);
+                this.case.ReDraw();
+            } else {
+                return false;
+            }
         }
+        indexPlayerJ--;
+        return true;
     }
-    if (direction == 'r') {
-        if (matrix[indexPlayerI][indexPlayerJ + 1] != "X") {
-            indexPlayerJ++;
-            return true;
+    if (direction == 'r' && matrix[indexPlayerI][indexPlayerJ + 1] != "X") {
+        if (matrix[indexPlayerI][indexPlayerJ + 1] == "*") {
+            if (matrix[indexPlayerI][indexPlayerJ + 1 + 1] != "X" && matrix[indexPlayerI][indexPlayerJ + 1 + 1] != "*") {
+                this.case = new Container(indexPlayerI, indexPlayerJ + 1, indexPlayerI, indexPlayerJ + 1 + 1);
+                this.case.ReDraw();
+            } else {
+                return false;
+            }
         }
+        indexPlayerJ++;
+        return true;
     }
     return false;
 }
@@ -132,7 +140,34 @@ class Player {
 }
 
 class Container {
+    constructor(i, j, nextI, nextJ) {
+        this.i = i;
+        this.j = j;
+        this.nextI = nextI;
+        this.nextJ = nextJ;
+    }
 
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    ReDraw() {
+        matrix[this.nextI][this.nextJ] = "*";
+        matrix[this.i][this.j] = " ";
+        ctx.clearRect(this.j * 60, this.i * 60, cellSize, cellSize);
+        ctx.beginPath();
+        ctx.fillStyle = "blue";
+        ctx.fillRect((this.nextJ) * 60, this.nextI * 60, cellSize, cellSize);
+        ctx.closePath();
+    }
+
+    init() {
+        ctx.beginPath();
+        ctx.fillStyle = "blue";
+        ctx.fillRect(this.x + 1, this.y + 1, cellSize - 2, cellSize - 2);
+        ctx.closePath();
+    }
 }
 
 var i = 0;
@@ -173,7 +208,6 @@ class Storage {
                 startStorekeeperY = y + cellSize / 2;
                 indexPlayerI = i;
                 indexPlayerJ = matrix[i].indexOf(elem, indexPlayerI);
-                // console.log(indexPlayerI + " " + indexPlayerJ);
             } else if (elem == "\n") {
                 i++;
                 matrix[i] = [];
@@ -183,10 +217,8 @@ class Storage {
                 matrix[i].push(elem);
             } else if (elem == "*") {
                 matrix[i].push(elem);
-                ctx.beginPath();
-                ctx.fillStyle = "blue";
-                ctx.fillRect(x, y, cellSize, cellSize);
-                ctx.closePath();
+                this.case = new Container();
+                this.case.init();
             } else if (elem == ".") {
                 matrix[i].push(elem);
                 ctx.beginPath();
