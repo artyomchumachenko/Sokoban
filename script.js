@@ -1,54 +1,83 @@
 var canvas = document.getElementById('canvasSokoban');
 var ctx = canvas.getContext('2d');
-
 var keyBind = []; // массив клавиш, которые прожимает игрок
-
 var startStorekeeperX; // начальная точка спавна игрока
 var startStorekeeperY;
 var storeKeeperRadius = 25; // радиус круга игрока
-
 const cellSize = 60; // размер ячейки игрового поля
+// инициализация матрицы для работы с информацией по мапе
+var i = 0;
+var matrix = [];
+matrix[i] = [];
+var indexPlayerI = 0; // индексы текущего положения игрока на мапе матрицы
+var indexPlayerJ = 0;
+const img = new Image(); // картинка стенки которая не работает :(:(:((:(
+img.src = "images/copy.png";
+var emptyseatsI = [];
+var emptyseatsJ = [];
+var gameOver = false;
+let goNextMessage = "Перейти на следующий уровень?";
+var currLevel = 0;
+var WALL = "wall";
+var CASE = "container";
+var FP = "finishPlace";
 
-var map =
-    `XXXXXXXXXXXXXXXXXXXXXX
-XXXXX   XXXXXXXXXXXXXX
-XXXXX*  XXXXXXXXXXXXXX
-XXX  *XXXXXXXXXXXXXXXX
-X  *  * XXXXXXXXXXXXXX
-XXX X XXX XXXXXXXXXXXX
+var map = [];
+map.push(`    XXXXX             
+    X   X             
+    X*  X             
+  XXX  *XXX           
+  X  *  * X           
+XXX X XXX X     XXXXXX
 X   X XXX XXXXXXX  ..X
 X *  *             ..X
 XXXXX XXXX X@XXXX  ..X
-XXXXX      XXXXXXXXXXX
-XXXXXXXXXXXXXXXXXXXXXX`
+    X      XXX  XXXXXX
+    XXXXXXXX          `);
 
-// Create 2mernie massive test
-/*var matrix = [];
-for (var i = 0; i < 10; i++) {
-    matrix[i] = [];
-    for (var j = 0; j < 10; j++) {
-        matrix[i][j] = Math.random() * 5 + 2;
-        console.log(matrix[i][j]);
-    }
-}*/
+map.push(`XXXXXXXXXXXX  
+X..  X     XXX
+X..  X *  *  X
+X..  X*XXXX  X
+X..    @ XX  X
+X..  X X  * XX
+XXXXXX XX* * X
+  X *  * * * X
+  X    X     X
+  XXXXXXXXXXXX`);
 
-var mapLengthX = 22; // нужно изменить !!!
-var mapLengthY = 11;
-
+map.push(`        XXXXXXXX 
+        X     @X 
+        X *X* XX 
+        X *  *X  
+        XX* * X  
+XXXXXXXXX * X XXX
+X....  XX *  *  X
+XX...    *  *   X
+X....  XXXXXXXXXX
+XXXXXXXX         `);
 
 document.addEventListener('keydown', function (e) {
-    if (e.repeat == false) { // чтобы не улетал шарик
-        keyBind.push(e.code);
-    }
+    // if (e.repeat == false) { // чтобы не улетал шарик
+    keyBind.push(e.code);
+    // }
 })
 
-function checkMove(direction) {
+function ClearMatrix() {
+    i = 0;
+    matrix = [];
+    matrix[i] = [];
+    emptyseatsI = [];
+    emptyseatsJ = [];
+}
+
+function CheckMove(direction) {
     // console.log(indexPlayerI + " " + indexPlayerJ);
     if (direction == 'u' && matrix[indexPlayerI - 1][indexPlayerJ] != "X") {
         if (matrix[indexPlayerI - 1][indexPlayerJ] == "*") {
             if (matrix[indexPlayerI - 1 - 1][indexPlayerJ] != "X" && matrix[indexPlayerI - 1 - 1][indexPlayerJ] != "*") {
                 this.case = new Container(indexPlayerI - 1, indexPlayerJ, indexPlayerI - 1 - 1, indexPlayerJ);
-                this.case.ReDraw();
+                this.case.reDraw();
             } else {
                 return false;
             }
@@ -60,7 +89,7 @@ function checkMove(direction) {
         if (matrix[indexPlayerI + 1][indexPlayerJ] == "*") {
             if (matrix[indexPlayerI + 1 + 1][indexPlayerJ] != "X" && matrix[indexPlayerI + 1 + 1][indexPlayerJ] != "*") {
                 this.case = new Container(indexPlayerI + 1, indexPlayerJ, indexPlayerI + 1 + 1, indexPlayerJ);
-                this.case.ReDraw();
+                this.case.reDraw();
             } else {
                 return false;
             }
@@ -72,7 +101,7 @@ function checkMove(direction) {
         if (matrix[indexPlayerI][indexPlayerJ - 1] == "*") {
             if (matrix[indexPlayerI][indexPlayerJ - 1 - 1] != "X" && matrix[indexPlayerI][indexPlayerJ - 1 - 1] != "*") {
                 this.case = new Container(indexPlayerI, indexPlayerJ - 1, indexPlayerI, indexPlayerJ - 1 - 1);
-                this.case.ReDraw();
+                this.case.reDraw();
             } else {
                 return false;
             }
@@ -84,7 +113,7 @@ function checkMove(direction) {
         if (matrix[indexPlayerI][indexPlayerJ + 1] == "*") {
             if (matrix[indexPlayerI][indexPlayerJ + 1 + 1] != "X" && matrix[indexPlayerI][indexPlayerJ + 1 + 1] != "*") {
                 this.case = new Container(indexPlayerI, indexPlayerJ + 1, indexPlayerI, indexPlayerJ + 1 + 1);
-                this.case.ReDraw();
+                this.case.reDraw();
             } else {
                 return false;
             }
@@ -103,25 +132,25 @@ class Player {
     }
 
     Up() {
-        if (checkMove('u')) {
+        if (CheckMove('u')) {
             this.y -= cellSize;
         }
     }
 
     Down() {
-        if (checkMove('d')) {
+        if (CheckMove('d')) {
             this.y += cellSize;
         }
     }
 
     Left() {
-        if (checkMove('l')) {
+        if (CheckMove('l')) {
             this.x -= cellSize;
         }
     }
 
     Right() {
-        if (checkMove('r')) {
+        if (CheckMove('r')) {
             this.x += cellSize;
         }
     }
@@ -157,34 +186,23 @@ class Player {
 
 class Container {
     constructor(i, j, nextI, nextJ) {
-        this.i = i;
+        this.i = i; // текущее положение контейнера в мапе матрицы
         this.j = j;
-        this.nextI = nextI;
+        this.nextI = nextI; // положение когда мы двигаем контейнер
         this.nextJ = nextJ;
     }
 
-    ReDraw() {
-        matrix[this.nextI][this.nextJ] = "*";
-        matrix[this.i][this.j] = " ";
-        ctx.clearRect(this.j * 60 + 1, this.i * 60 + 1, cellSize - 2, cellSize - 2);
+    reDraw() {
+        matrix[this.nextI][this.nextJ] = "*"; // след ячейке мапы мы даем понять что теперь там наш контейнер
+        matrix[this.i][this.j] = " "; // а пред положению показываем что там контейнера уже нет
+        ctx.clearRect(this.j * 60 + 1, this.i * 60 + 1, cellSize - 2, cellSize - 2); // очищаем ячейку с пред положением
         ctx.beginPath();
-        ctx.fillStyle = "blue";
+        ctx.fillStyle = "blue"; // рисуем контейнер на новом положении
         ctx.fillRect(this.nextJ * 60 + 1, this.nextI * 60 + 1, cellSize - 2, cellSize - 2);
         ctx.closePath();
-    }
-
-    Check() {
-
+        gameOver = CheckContainerPositions();
     }
 }
-
-var i = 0;
-var matrix = [];
-matrix[i] = [];
-var indexPlayerI = 0;
-var indexPlayerJ = 0;
-const img = new Image();
-img.src = "images/copy.png";
 
 class Storage {
     constructor(width, height) {
@@ -193,29 +211,26 @@ class Storage {
     }
 
     initStartGameField() {
-        ctx.drawImage(img, mapLengthX * cellSize + 120, 0);
-        ctx.strokeStyle = "grey";
-        for (let dx = 0; dx <= this.w; dx += cellSize) ctx.strokeRect(dx, 0, 0, this.h);
-        for (let dy = 0; dy <= this.h; dy += cellSize) ctx.strokeRect(0, dy, this.w, 0);
+        // ctx.strokeStyle = "grey";
+        // for (let dx = 0; dx <= this.w; dx += cellSize) ctx.strokeRect(dx, 0, 0, this.h);
+        // for (let dy = 0; dy <= this.h; dy += cellSize) ctx.strokeRect(0, dy, this.w, 0);
         var x = 0;
         var y = 0;
-        for (let elem of map) {
+        for (let elem of map[currLevel]) {
             if (elem == "X") {
                 matrix[i].push(elem);
 
-                ctx.beginPath();
-                ctx.fillStyle = "black";
-                ctx.fillRect(x, y, cellSize, cellSize);
-                ctx.closePath();
+                DrawThisItem(WALL, x, y);
 
                 /*ctx.drawImage(img, x, y, cellSize, cellSize);
                 console.log("Image!");*/
             } else if (elem == "@") {
                 matrix[i].push(elem);
+
                 startStorekeeperX = x + cellSize / 2;
                 startStorekeeperY = y + cellSize / 2;
                 indexPlayerI = i;
-                indexPlayerJ = matrix[i].indexOf(elem, indexPlayerI);
+                indexPlayerJ = matrix[i].indexOf(elem, i);
             } else if (elem == "\n") {
                 i++;
                 matrix[i] = [];
@@ -225,49 +240,107 @@ class Storage {
                 matrix[i].push(elem);
             } else if (elem == "*") {
                 matrix[i].push(elem);
-                ctx.beginPath();
-                ctx.fillStyle = "blue";
-                ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
-                ctx.closePath();
+
+                DrawThisItem(CASE, x, y);
             } else if (elem == ".") {
                 matrix[i].push(elem);
-                ctx.beginPath();
-                ctx.fillStyle = "red";
-                ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
-                ctx.closePath();
+
+                emptyseatsI.push(i);
+                emptyseatsJ.push(matrix[i].length - 1);
+
+                DrawThisItem(FP, x, y);
             }
             x += cellSize;
         }
     }
+}
 
-    Draw() {
-
+function DrawThisItem(item, x, y) {
+    if (item == "container") {
+        ctx.beginPath();
+        ctx.fillStyle = "blue";
+        ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
+        ctx.closePath();
     }
+    if (item == "wall") {
+        ctx.beginPath();
+        ctx.fillStyle = "black";
+        ctx.fillRect(x, y, cellSize, cellSize);
+        ctx.closePath();
+    }
+    if (item == "finishPlace") {
+        ctx.beginPath();
+        ctx.strokeStyle = "red";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, cellSize, cellSize);
+        // ctx.fillStyle = "red";
+        // ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
+        ctx.closePath();
+    }
+}
+
+function CheckContainerPositions() {
+    let yourWin = false;
+    for (let i = 0; i < numOfContainers; i++) {
+        if (matrix[emptyseatsI[i]][emptyseatsJ[i]] != "*") {
+            return yourWin;
+        }
+    }
+    yourWin = true;
+    return yourWin;
 }
 
 function StartGame() {
     canvas.width = window.innerWidth - cellSize / 2;
     canvas.height = window.innerHeight - cellSize / 2;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    let mapLengthX = map[currLevel].indexOf("\n");
+    let mapLengthY = map[currLevel].split("\n").length;
 
     storage = new Storage(mapLengthX * cellSize, mapLengthY * cellSize);
     storage.initStartGameField();
+
+    var numOfContainers = map[currLevel]
+        .replaceAll("X", "")
+        .replaceAll("*", "")
+        .replaceAll("@", "")
+        .replaceAll(" ", "")
+        .replaceAll("\n", "").length;
 
     player = new Player(startStorekeeperX, startStorekeeperY);
     player.Draw();
     requestAnimationFrame(Update);
 
-    // for (let i = 0; i < mapLengthY; i++) {
-    //     for (let j = 0; j < mapLengthX; j++) {
-    //         console.log(matrix[i][j]);
-    //     }
-    // }
+    // console.log("x = " + mapLengthX + " y = " + mapLengthY); // easy search size of map[currLevel] ;];];]
+    //
+    // console.log(map[currLevel].replaceAll("X", "")
+    //                 .replaceAll("*", "")
+    //                 .replaceAll("@", "")
+    //                 .replaceAll(" ", "")
+    //                 .replaceAll("\n", "").length);
+    //
+    // console.log(matrix[i].includes("."));
+    //
+    // console.log(emptyseatsI);
+    // console.log(emptyseatsJ);
 }
 
 function Update() {
+    if (!gameOver) {
+        requestAnimationFrame(Update);
+    } else if (confirm(goNextMessage)) {
+        currLevel++;
+        ClearMatrix();
+        StartGame();
+    } else {
+        window.close();
+    }
+    // console.log(CheckContainerPositions());
     ctx.clearRect(player.x - cellSize / 2 + 1, player.y - cellSize / 2 + 1, cellSize - 2, cellSize - 2);
     // storage.initStartGameField();
     player.Animate();
-    requestAnimationFrame(Update);
+    // requestAnimationFrame(Update);
 }
 
 StartGame();
