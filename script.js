@@ -21,6 +21,7 @@ var currLevel = 0;
 var WALL = "wall";
 var CASE = "container";
 var FP = "finishPlace";
+var numOfContainers;
 
 var map = [];
 map.push(`    XXXXX             
@@ -69,6 +70,7 @@ function ClearMatrix() {
     matrix[i] = [];
     emptyseatsI = [];
     emptyseatsJ = [];
+    gameOver = false;
 }
 
 function CheckMove(direction) {
@@ -301,7 +303,7 @@ function StartGame() {
     storage = new Storage(mapLengthX * cellSize, mapLengthY * cellSize);
     storage.initStartGameField();
 
-    var numOfContainers = map[currLevel]
+    numOfContainers = map[currLevel]
         .replaceAll("X", "")
         .replaceAll("*", "")
         .replaceAll("@", "")
